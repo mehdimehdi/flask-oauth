@@ -252,6 +252,7 @@ class OAuthRemoteApp(object):
         headers = dict(headers or {})
         client = self.make_client()
         url = self.expand_url(url)
+        data = dict(data or {}) 
 
         if client.token.key and len(client.token.secret) == 0:
             data.update({ 'access_token': client.token.key })
