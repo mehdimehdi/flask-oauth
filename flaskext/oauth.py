@@ -252,11 +252,15 @@ class OAuthRemoteApp(object):
         headers = dict(headers or {})
         client = self.make_client()
         url = self.expand_url(url)
+
+        if client.token.key and len(client.token.secret) == 0:
+            data.update({ 'access_token': client.token.key })
+
         if method == 'GET':
             assert format == 'urlencoded'
-            if not data:
+            if data is not None:
                 url = add_query(url, data)
-                data = ""
+                data = None
         else:
             if content_type is None:
                 data, content_type = encode_request_data(data, format)
