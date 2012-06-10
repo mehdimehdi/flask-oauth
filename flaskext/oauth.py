@@ -156,6 +156,7 @@ class OAuthRemoteApp(object):
     :param request_token_url: the URL for requesting new tokens
     :param access_token_url: the URL for token exchange
     :param authorize_url: the URL for authorization
+    :param allow_userless: allow user less call (without token) or not
     :param consumer_key: the application specific consumer key
     :param consumer_secret: the application specific consumer secret
     :param request_token_params: an optional dictionary of parameters
@@ -175,6 +176,7 @@ class OAuthRemoteApp(object):
                  consumer_key, consumer_secret,
                  request_token_params=None,
                  access_token_params=None,
+                 allow_userless=False,
                  access_token_method='GET'):
         self.oauth = oauth
         #: the `base_url` all URLs are joined with.
@@ -186,6 +188,7 @@ class OAuthRemoteApp(object):
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
         self.tokengetter_func = None
+        self.allow_userless = allow_userless
         self.request_token_params = request_token_params or {}
         self.access_token_params = access_token_params or {}
         self.access_token_method = access_token_method
@@ -254,7 +257,7 @@ class OAuthRemoteApp(object):
         url = self.expand_url(url)
         data = dict(data or {}) 
 
-        if client.token.key and len(client.token.secret) == 0:
+        if client.token is not None and client.token.key and len(client.token.secret) == 0:
             data.update({ 'access_token': client.token.key })
 
         if method == 'GET':
@@ -294,8 +297,10 @@ class OAuthRemoteApp(object):
         rv = self.tokengetter_func()
         if rv is None:
             rv = session.get(self.name + '_oauthtok')
-            if rv is None:
+            if rv is None and not self.allow_userless:
                 raise OAuthException('No token available')
+            else:
+                return None
         return oauth2.Token(*rv)
 
     def free_request_token(self):
